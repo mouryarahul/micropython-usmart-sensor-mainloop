@@ -106,11 +106,12 @@ def run_mainloop():
 
     # Set callback for nm3 pin change - line goes high on frame synchronisation
     # make sure it is clear first
-    nm3_extint = pyb.ExtInt(pyb.Pin.board.Y3, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_DOWN, None)
-    nm3_extint = pyb.ExtInt(pyb.Pin.board.Y3, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_DOWN, nm3_callback)
+    nm3_extint = pyb.ExtInt(pyb.Pin.board.Y3, pyb.ExtInt.IRQ_RISING, pyb.Pin.PULL_DOWN, None)
+    nm3_extint = pyb.ExtInt(pyb.Pin.board.Y3, pyb.ExtInt.IRQ_RISING, pyb.Pin.PULL_DOWN, nm3_callback)
 
-    uart = machine.UART(1, 9600, bits=8, parity=None, stop=1, timeout=1000)
-    nm3_modem = Nm3(uart)
+    # Serial Port/UART is opened with a 100ms timeout for reading - non-blocking.
+    uart = machine.UART(1, 9600, bits=8, parity=None, stop=1, timeout=100)
+    nm3_modem = Nm3(input_stream=uart, output_stream=uart)
 
     nm3_network = Nm3NetworkSimple(nm3_modem)
     gateway_address = 7
@@ -141,7 +142,7 @@ def run_mainloop():
             # _nm3_callback_micros - loops after 17.8 minutes. pauses during sleep modes.
             if _nm3_callback_flag:
                 _nm3_callback_flag = False  # Clear flag
-                jotter.get_jotter().jot("NM3 Hardware Flag set.", source_file=__name__)
+                #jotter.get_jotter().jot("NM3 Hardware Flag set.", source_file=__name__)
                 # Packet incoming - although it may not be for us - try process for 2 seconds?
                 start_millis = pyb.millis()
 
@@ -169,7 +170,7 @@ def run_mainloop():
             # If is time to take a sensor reading (eg hourly)
             if _rtc_callback_flag:
                 _rtc_callback_flag = False  # Clear the flag
-                jotter.get_jotter().jot("RTC Flag set.", source_file=__name__)
+                #jotter.get_jotter().jot("RTC Flag set.", source_file=__name__)
                 # Get from sensor payload: data as bytes
                 sensor = sensor_payload.get_sensor_payload_instance()
                 sensor.start_acquisition()
@@ -181,7 +182,7 @@ def run_mainloop():
 
                 # Make up the payload and send via the Network to be relayed.
                 # For now we will use the simple network that sends direct to gateway using unicast with ack and retries
-                jotter.get_jotter().jot("Sending message to nm3_network.", source_file=__name__)
+                #jotter.get_jotter().jot("Sending message to nm3_network.", source_file=__name__)
                 max3221e.tx_force_on()  # Enable Tx Driver
                 nm3_network.send_message(gateway_address, message_bytes, retries=3, timeout=5.0)
                 max3221e.tx_force_off()  # Disable Tx Driver
@@ -196,15 +197,17 @@ def run_mainloop():
             # Sleep
             # a. Light Sleep
             # pyb.stop()
-            #_rtc_callback_flag = False  # Clear the callback flags
-            #machine.lightsleep()
+            _rtc_callback_flag = False  # Clear the callback flags
+            machine.lightsleep()
             # b. Deep Sleep - followed by hard reset
             # pyb.standby()
             # machine.deepsleep()
             # c. poll flag without sleeping
-            while not _rtc_callback_flag:
-                continue
+            #while not _rtc_callback_flag:
+            #    continue
             #_rtc_callback_flag = False
+            # d. wait for interrupt
+            # pyb.wfi()
 
             #
             # Wake up
@@ -217,7 +220,9 @@ def run_mainloop():
 
 
         except Exception as the_exception:
-            jotter.get_jotter().jot_exception(the_exception)
+            import sys
+            sys.print_exception(the_exception)
+            #jotter.get_jotter().jot_exception(the_exception)
             pass
             # Log to file
 
