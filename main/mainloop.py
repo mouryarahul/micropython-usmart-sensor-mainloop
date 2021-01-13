@@ -192,22 +192,22 @@ def run_mainloop():
                             message_packet.timestamp = (_nm3_callback_secs, _nm3_callback_millis, _nm3_callback_micros)
 
                         # debug msg
-                        timetuple = message_packet.timestamp
-                        if USE_RTC_FOR_TIMING:
-                            dt = datetime(timetuple[0], timetuple[1], timetuple[2], timetuple[3], timetuple[4], timetuple[5], timetuple[6])
-                            timestamp = dt.timestamp()  # convert datetime to seconds.
-                        else:
-                            timestamp = timetuple[0] + (timetuple[1] / 1E3) + (timetuple[2] / 1E6)
+                        # timetuple = message_packet.timestamp
+                        # if USE_RTC_FOR_TIMING:
+                        #     dt = datetime(timetuple[0], timetuple[1], timetuple[2], timetuple[3], timetuple[4], timetuple[5], timetuple[6])
+                        #     timestamp = dt.timestamp()  # convert datetime to seconds.
+                        # else:
+                        #     timestamp = timetuple[0] + (timetuple[1] / 1E3) + (timetuple[2] / 1E6)
 
-                        print("\n")
-                        print("Received a packet at: ", timestamp)
+                        # print("\n")
+                        # print("Received a packet at: ", timestamp)
                         # print("Received packet payload: ", message_packet.packet_payload)
                         # Convert packet_payload into string bytes
                         msg_bytes = b""
                         for item in message_packet.packet_payload:
                             msg_bytes += bytes([item])
 
-                        print("msg_bytes: ", msg_bytes)
+                        # print("msg_bytes: ", msg_bytes)
 
                         # Pass the message packet on to the relevant submodule
 
